@@ -1,53 +1,50 @@
 import { Feather } from '@expo/vector-icons';
-import { useState } from 'react';
+import { router } from 'expo-router'; // 1. Import router
 import { Image, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import themes from '../../themes';
-import BottomTab from '../BottomTabs';
-import ProductList from '../ProductList'; // Import component danh sách
+import ProductList from '../ProductList';
 
 const { colors, typography } = themes;
 
-// Giữ nguyên DUMMY_DATA của bạn
+// 1. Data cho Cây trồng
 const DUMMY_DATA = [
-    {
-        id: '1',
-        name: 'Spider Plant',
-        type: 'Ưa bóng',
-        price: '250.000đ',
-        image: 'https://picsum.photos/200'
-    },
-    {
-        id: '2',
-        name: 'Song of India',
-        type: 'Ưa sáng',
-        price: '250.000đ',
-        image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLzvDV12o-JVDfBt3-VNV6TL4nw6CuBG-WDA&s'
-    },
-    {
-        id: '3',
-        name: 'Hồng Môn',
-        type: 'Ưa bóng',
-        price: '250.000đ',
-        image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLzvDV12o-JVDfBt3-VNV6TL4nw6CuBG-WDA&s'
-    },
-    {
-        id: '4',
-        name: 'Trầu Bà',
-        type: 'Ưa bóng',
-        price: '250.000đ',
-        image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLzvDV12o-JVDfBt3-VNV6TL4nw6CuBG-WDA&s'
-    },
+    { id: '1', name: 'Spider Plant', type: 'Ưa bóng', price: '250.000đ', image: 'https://picsum.photos/200' },
+    { id: '2', name: 'Song of India', type: 'Ưa sáng', price: '250.000đ', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLzvDV12o-JVDfBt3-VNV6TL4nw6CuBG-WDA&s' },
+    { id: '3', name: 'Hồng Môn', type: 'Ưa bóng', price: '250.000đ', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLzvDV12o-JVDfBt3-VNV6TL4nw6CuBG-WDA&s' },
+    { id: '4', name: 'Trầu Bà', type: 'Ưa bóng', price: '250.000đ', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLzvDV12o-JVDfBt3-VNV6TL4nw6CuBG-WDA&s' },
 ];
 
-const HomeScreen = () => {
-    const [activeTab, setActiveTab] = useState('home');
+// 2. Data cho Phụ kiện
+const DUMMY_ACCESSORIES = [
+    { id: '1', name: 'Bình tưới CB2 SAIC', price: '250.000đ', image: 'https://images.unsplash.com/photo-1598045618585-618413b8cb46?q=80&w=600&auto=format&fit=crop' },
+    { id: '2', name: 'Bình xịt Xiaoda', price: '250.000đ', image: 'https://images.unsplash.com/photo-1622323758558-8c084fcdb442?q=80&w=600&auto=format&fit=crop' },
+    { id: '3', name: 'Bộ cuốc xẻng mini', price: '250.000đ', image: 'https://images.unsplash.com/photo-1416879598555-520ef69d08e5?q=80&w=600&auto=format&fit=crop' },
+    { id: '4', name: 'Giá đỡ Finn Terrazzo', price: '250.000đ', image: 'https://images.unsplash.com/photo-1616440347285-d6c5bbadbfb2?q=80&w=600&auto=format&fit=crop' },
+];
 
-    // Link ảnh banner thật (hình các chậu cây cảnh trên bàn gỗ)
-    const BANNER_IMAGE_URI = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQsIZGlfJb4Ld7WO-19wrl-VGOCK69EJHryBw&s';
+// 3. Component ComboCard
+const ComboCard = ({ title, description, image, onPress }) => {
+    return (
+        <TouchableOpacity style={styles.comboCardContainer} activeOpacity={0.8} onPress={onPress}>
+            <View style={styles.comboTextWrap}>
+                <Text style={[typography.subBold, styles.comboTitle]} numberOfLines={1}>{title}</Text>
+                <Text style={[typography.bodyRegular, styles.comboDesc]} numberOfLines={4}>
+                    {description}
+                </Text>
+            </View>
+            <Image source={{ uri: image }} style={styles.comboImage} />
+        </TouchableOpacity>
+    );
+};
+
+const HomeScreen = () => {
+    const BANNER_IMAGE_URI = 'https://www.shutterstock.com/image-photo/interior-living-room-monstera-plants-600w-2736506557.jpg';
+    
+    // Link ảnh demo cho Combo
+    const COMBO_IMAGE_URI = 'https://images.unsplash.com/photo-1604762524889-3e2fcc145683?q=80&w=600&auto=format&fit=crop';
 
     return (
         <View style={styles.container}>
-            {/* Đổi thành dark-content để dễ nhìn trên nền xám nhạt */}
             <StatusBar barStyle="dark-content" backgroundColor="#F9F9F9" translucent />
 
             <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollContent}>
@@ -59,19 +56,27 @@ const HomeScreen = () => {
                             <Text style={[typography.h1Medium, styles.title]}>Planta - toả sáng</Text>
                             <Text style={[typography.h1Medium, styles.title]}>không gian nhà bạn</Text>
 
-                            <TouchableOpacity activeOpacity={0.7} style={styles.newArrivalBtn}>
+                            {/* 2. Cập nhật onPress cho nút Xem hàng mới về */}
+                            <TouchableOpacity 
+                                activeOpacity={0.7} 
+                                style={styles.newArrivalBtn}
+                                onPress={() => router.push({
+                                    pathname: '/category/hang-moi-ve',
+                                    params: { title: 'HÀNG MỚI VỀ' } // Truyền title sang màn hình list
+                                })}
+                            >
                                 <Text style={[typography.subMedium, styles.newArrivalText]}>Xem hàng mới về</Text>
                                 <Feather name="arrow-right" size={18} color={colors.MAIN} />
                             </TouchableOpacity>
                         </View>
 
-                        {/* Nút Giỏ hàng */}
-                        <TouchableOpacity activeOpacity={0.8} style={styles.cartBtn}>
+                        <TouchableOpacity activeOpacity={0.8} style={styles.cartBtn} onPress={() => {
+                            router.push('/Cart')
+                        }}> 
                             <Feather name="shopping-cart" size={20} color={colors.BLACK} />
                         </TouchableOpacity>
                     </View>
 
-                    {/* Vùng chứa ảnh banner thực tế - nằm sát dưới cùng bên phải */}
                     <View style={styles.bannerContainer}>
                         <Image
                             source={{ uri: BANNER_IMAGE_URI }}
@@ -81,33 +86,36 @@ const HomeScreen = () => {
                     </View>
                 </View>
 
-                {/* --- PRODUCT SECTION --- */}
-                {/* Thêm khoảng đệm paddingTop để danh sách sản phẩm không bị dính vào ảnh banner */}
+                {/* --- BODY CONTENT --- */}
                 <View style={styles.bodyContent}>
+                    
+                    {/* 1. Danh sách Cây trồng */}
                     <ProductList
                         title="Cây trồng"
-                        cateID="CAY_TRONG_01"
+                        cateID="CAY_TRONG"
                         data={DUMMY_DATA}
-                        onViewMore={(id) => {
-                            console.log('Xem thêm danh mục ID:', id);
-                        }}
                     />
 
-                    {/* Danh mục Chậu cây trồng test scroll */}
+                    {/* 2. Danh sách Phụ kiện */}
                     <ProductList
-                        title="Chậu cây trồng"
-                        cateID="CHAU_CAY_02"
-                        data={DUMMY_DATA}
-                        onViewMore={(id) => {
-                            console.log('Xem thêm danh mục ID:', id);
-                        }}
+                        title="Phụ kiện"
+                        cateID="PHU_KIEN"
+                        data={DUMMY_ACCESSORIES}
                     />
+
+                    {/* 3. Combo chăm sóc (mới) */}
+                    <View style={styles.comboSection}>
+                        <Text style={[typography.h1Medium, styles.sectionTitle]}>Combo chăm sóc (mới)</Text>
+                        <ComboCard
+                            title="Lemon Balm Grow Kit"
+                            description="Gồm: hạt giống Lemon Balm, gói đất hữu cơ, chậu Planta, marker đánh dấu..."
+                            image={COMBO_IMAGE_URI}
+                            onPress={() => console.log('Bấm vào Combo')}
+                        />
+                    </View>
+
                 </View>
-
             </ScrollView>
-
-            {/* --- BOTTOM TAB --- */}
-            <BottomTab activeTab={activeTab} onTabPress={setActiveTab} />
         </View>
     );
 };
@@ -122,8 +130,8 @@ const styles = StyleSheet.create({
     },
     // Header Styles
     headerWrapper: {
-        backgroundColor: '#F9F9F9', // Màu xám rất nhạt
-        paddingTop: 65, // Tạo khoảng trống cho Notch/Status bar
+        backgroundColor: '#F9F9F9', 
+        paddingTop: 65, 
         paddingBottom: 20,
         zIndex: 1,
     },
@@ -163,22 +171,61 @@ const styles = StyleSheet.create({
         elevation: 3,
         marginLeft: 15,
     },
-    // Banner Styles - Nằm sát góc dưới bên phải
     bannerContainer: {
-        height: 140, // Tăng chiều cao để ảnh nổi bật
-        alignItems: 'flex-end', // Căn ảnh sang bên phải
-        justifyContent: 'flex-end', // Căn ảnh xuống dưới cùng
-        marginTop: -30, // Kéo ảnh lên một chút để tạo cảm giác cây "mọc" lên
+        height: 140, 
+        alignItems: 'flex-end', 
+        justifyContent: 'flex-end', 
+        marginTop: -30, 
         paddingRight: 10,
     },
     bannerImage: {
-        width: '65%', // Chiều rộng ảnh chiếm khoảng 65% màn hình
+        width: '65%', 
         height: '100%',
     },
+    
     // Body Styles
     bodyContent: {
-        marginTop: 0, // Điều chỉnh nếu cần thêm khoảng cách với Header
         backgroundColor: colors.WHITE,
+        paddingBottom: 20, 
+    },
+
+    // Combo Section Styles
+    comboSection: {
+        paddingHorizontal: 24,
+        paddingBottom: 40,
+        backgroundColor: colors.WHITE,
+    },
+    sectionTitle: {
+        color: colors.BLACK,
+        marginBottom: 15,
+    },
+    
+    // Combo Card Component Styles
+    comboCardContainer: {
+        flexDirection: 'row',
+        backgroundColor: colors.NEW, 
+        borderRadius: 12,
+        overflow: 'hidden',
+        height: 140, 
+    },
+    comboTextWrap: {
+        flex: 1,
+        padding: 16,
+        justifyContent: 'center', 
+    },
+    comboTitle: {
+        color: colors.BLACK,
+        marginBottom: 6,
+    },
+    comboDesc: {
+        color: colors.GRAY,
+        lineHeight: 20,
+        fontSize: 14,
+    },
+    comboImage: {
+        width: "35%", 
+        height: '100%',
+        resizeMode: 'cover',
     },
 });
 

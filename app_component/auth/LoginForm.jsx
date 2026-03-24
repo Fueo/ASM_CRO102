@@ -18,7 +18,7 @@ const LoginForm = () => {
     // Hàm xử lý khi nhấn nút Đăng nhập
     const handleLogin = () => {
         console.log("Đăng nhập:", { email, password });
-        router.replace('/tabs/Home'); // Điều hướng đến trang Home sau khi đăng nhập thành công
+        router.replace('/tabs'); // Điều hướng đến trang Home sau khi đăng nhập thành công
     };
 
     return (

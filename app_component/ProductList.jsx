@@ -1,3 +1,4 @@
+import { router } from 'expo-router'; // 1. Import router từ expo-router
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import themes from '../themes';
 import ProductCard from './ProductCard';
@@ -9,11 +10,13 @@ const ProductList = ({ title, data, cateID, onViewMore }) => {
     // Hàm xử lý khi bấm nút "Xem thêm"
     const handleViewMore = () => {
         if (onViewMore) {
-            onViewMore(cateID);
+            onViewMore(cateID); // Vẫn giữ lại nếu component cha muốn ghi đè logic
         } else {
-            console.log(`Chuyển đến trang danh mục: ${title} - ID: ${cateID}`);
-            // Gợi ý: Nếu dùng expo-router, bạn có thể gọi: 
-            // router.push(`/category/${cateID}`)
+            // 2. Thực hiện chuyển trang và truyền params
+            router.push({
+                pathname: `/category/${cateID}`,
+                params: { title: title } // Truyền title sang để màn hình kia hiển thị trên Header
+            });
         }
     };
 

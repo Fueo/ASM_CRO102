@@ -1,11 +1,22 @@
+import { router } from 'expo-router'; // Import router
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import themes from '../themes';
 
 const { colors, typography } = themes;
 
 const ProductCard = ({ item, onPress }) => {
+
+    // Xử lý sự kiện nhấn mặc định
+    const handlePress = () => {
+        if (onPress) {
+            onPress();
+        } else {
+            router.push(`/product/${item.id}`); 
+        }
+    };
+
     return (
-        <TouchableOpacity style={styles.productCard} onPress={onPress} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.productCard} onPress={handlePress} activeOpacity={0.8}>
             {/* Vùng chứa ảnh hình vuông */}
             <View style={styles.imageWrapper}>
                 <Image
@@ -50,15 +61,13 @@ const styles = StyleSheet.create({
         backgroundColor: colors.NEW,
         borderRadius: 12,
         marginBottom: 12,
-        // Dùng elevation/shadow ở đây nếu cần, nhưng cẩn thận với overflow: hidden
     },
     productImage: {
-        // Dùng absolute fill để bắt buộc ảnh lấp đầy hoàn toàn view cha (imageWrapper)
         ...StyleSheet.absoluteFillObject,
         width: '100%',
         height: '100%',
-        resizeMode: 'cover', // Cover thường dễ lên ảnh hơn contain khi dùng absoluteFill
-        borderRadius: 12, // Ép bo góc trực tiếp lên Image
+        resizeMode: 'cover', 
+        borderRadius: 12, 
     },
     productName: {
         color: colors.BLACK,
