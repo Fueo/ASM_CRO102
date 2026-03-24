@@ -6,19 +6,14 @@ import {
     ScrollView,
     StyleSheet
 } from 'react-native';
-import HeaderBanner from '../app_component/HeaderBanner'; // Điều chỉnh lại đường dẫn import nếu cần
-import RegisterForm from '../app_component/RegisterForm'; // Điều chỉnh lại đường dẫn import nếu cần
+import HeaderBanner from '../app_component/auth/HeaderLoginBanner'; // Điều chỉnh lại đường dẫn import nếu cần
+import RegisterForm from '../app_component/auth/RegisterForm'; // Điều chỉnh lại đường dẫn import nếu cần
 import { COLORS } from '../themes'; // Điều chỉnh lại đường dẫn import nếu cần
 
 const RegisterScreen = ({ navigation }) => {
     // Hàm xử lý khi bấm nút Back trên HeaderBanner
     const handleBack = () => {
-        if (router.canGoBack()) {
-            router.dismiss();
-            router.back();
-        }
-        // Nếu bạn đang dùng React Navigation, hãy bỏ comment dòng dưới đây:
-        // navigation.goBack(); 
+        router.canGoBack() && router.back();
     };
 
     return (

@@ -1,6 +1,6 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient'; // Thư viện để tạo gradient
-import themes from '../themes'; // Import tệp themes đã sửa đổi từ câu hỏi trước
+import themes from '../../themes'; // Import tệp themes đã sửa đổi từ câu hỏi trước
 
 // Component nút Đăng nhập
 const LoginButton = (props) => {
@@ -8,7 +8,7 @@ const LoginButton = (props) => {
     return (
         <TouchableOpacity onPress={onPress} style={styles.buttonContainer}>
             <LinearGradient
-                colors={themes.colors.GRADIENT_PRIMARY}
+                colors={themes.colors.GRADIENT_PRIMARY} s
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.gradient}

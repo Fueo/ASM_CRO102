@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Dimensions, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { COLORS } from '../themes';
+import { COLORS } from '../../themes';
 
 const { width } = Dimensions.get('window');
 
-const HeaderBanner = ({ onBackPress, heightRatio = 0.9 }) => (
+const HeaderBanner = ({ onBackPress, heightRatio = 0.8 }) => (
     <View style={[styles.outerContainer, { height: width * heightRatio }]}>
         <Image
-            source={require('../assets/images/bg_login.png')}
+            source={require('../../assets/images/bg_login.png')}
             style={styles.backgroundImage}
         />
 

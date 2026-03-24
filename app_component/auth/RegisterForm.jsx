@@ -1,25 +1,32 @@
-import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router'; // Import router để điều hướng
 import { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { COLORS, typography } from '../themes';
+import { COLORS, typography } from '../../themes';
+import LoginButton from './LoginButton'; // 1. Import LoginButton
 import LoginInput from './LoginInput';
 
 const RegisterForm = () => {
-    // Cập nhật các state tương ứng với form đăng ký
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
 
+    // Hàm xử lý đăng ký
+    const handleRegister = () => {
+        console.log("Đăng ký:", { fullName, email, phone, password });
+        // Thêm logic gọi API đăng ký tại đây
+    };
+
+    // Hàm quay lại trang Đăng nhập
+    const handleNavigateToLogin = () => {
+        router.back(); // Hoặc dùng router.push('/Login') tùy vào cấu trúc thư mục của bạn
+    };
+
     return (
         <View style={styles.formContainer}>
-            {/* Tiêu đề Đăng ký */}
             <Text style={styles.title}>Đăng ký</Text>
-
-            {/* Subtitle */}
             <Text style={styles.subtitle}>Tạo tài khoản</Text>
 
-            {/* Các trường nhập liệu */}
             <LoginInput
                 placeholder="Họ tên"
                 value={fullName}
@@ -44,7 +51,6 @@ const RegisterForm = () => {
                 isPassword={true}
             />
 
-            {/* Phần Terms & Conditions */}
             <View style={styles.termsContainer}>
                 <Text style={styles.termsText}>
                     Để đăng ký tài khoản, bạn đồng ý{' '}
@@ -54,39 +60,33 @@ const RegisterForm = () => {
                 </Text>
             </View>
 
-            {/* Nút Đăng ký */}
-            <TouchableOpacity style={styles.loginButtonContainer}>
-                <LinearGradient
-                    colors={COLORS.GRADIENT_PRIMARY || [COLORS.MAIN, '#4CAF50']}
-                    start={{ x: 0, y: 0.5 }}
-                    end={{ x: 1, y: 0.5 }}
-                    style={styles.loginButton}
-                >
-                    <Text style={[typography.h3Bold, styles.loginText]}>Đăng ký</Text>
-                </LinearGradient>
-            </TouchableOpacity>
+            {/* 2. Sử dụng Component LoginButton */}
+            <View style={styles.buttonWrapper}>
+                <LoginButton
+                    title="Đăng ký"
+                    onPress={handleRegister}
+                />
+            </View>
 
-            {/* Divider Hoặc */}
             <View style={styles.dividerContainer}>
                 <View style={styles.dividerLine} />
                 <Text style={styles.dividerText}>Hoặc</Text>
                 <View style={styles.dividerLine} />
             </View>
 
-            {/* Social Đăng nhập */}
             <View style={styles.socialContainer}>
                 <TouchableOpacity style={styles.socialButton}>
-                    <Image source={require('../assets/images/icon_google.png')} style={styles.socialIcon} />
+                    <Image source={require('../../assets/images/icon_google.png')} style={styles.socialIcon} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.socialButton}>
-                    <Image source={require('../assets/images/icon_facebook.png')} style={styles.socialIcon} />
+                    <Image source={require('../../assets/images/icon_facebook.png')} style={styles.socialIcon} />
                 </TouchableOpacity>
             </View>
 
-            {/* Footer chuyển sang Đăng nhập */}
             <View style={styles.footerContainer}>
                 <Text style={styles.textSmall}>Tôi đã có tài khoản</Text>
-                <TouchableOpacity>
+                {/* 3. Thêm sự kiện onPress để chuyển trang */}
+                <TouchableOpacity onPress={handleNavigateToLogin}>
                     <Text style={[typography.link, styles.footerLink]}> Đăng nhập</Text>
                 </TouchableOpacity>
             </View>
@@ -115,7 +115,6 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: COLORS.BLACK,
     },
-    // Style cho phần Terms & Conditions
     termsContainer: {
         marginBottom: 30,
         paddingHorizontal: 10,
@@ -125,26 +124,16 @@ const styles = StyleSheet.create({
         fontFamily: 'Poppins-Regular',
         fontSize: 12,
         color: COLORS.BLACK,
-        lineHeight: 18, // Giúp khoảng cách dòng dễ nhìn hơn
+        lineHeight: 18,
     },
     termsLink: {
         color: COLORS.MAIN,
         fontFamily: 'Poppins-Bold',
-        textDecorationLine: 'underline', // Gạch chân link
+        textDecorationLine: 'underline',
     },
-    loginButtonContainer: {
-        borderRadius: 30,
-        overflow: 'hidden',
+    // View bọc ngoài nút Đăng ký để giữ khoảng cách (thay cho loginButtonContainer cũ)
+    buttonWrapper: {
         marginBottom: 30,
-    },
-    loginButton: {
-        height: 55,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    loginText: {
-        color: COLORS.WHITE,
-        textTransform: 'none',
     },
     dividerContainer: {
         flexDirection: 'row',

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import themes from '../themes';
+import themes from '../../themes';
 
 const LoginInput = ({
     placeholder,

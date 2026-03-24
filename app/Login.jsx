@@ -1,12 +1,12 @@
+import { router } from 'expo-router';
 import { KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet } from 'react-native';
-import HeaderBanner from '../app_component/HeaderBanner';
-import LoginForm from '../app_component/LoginForm';
+import HeaderBanner from '../app_component/auth/HeaderLoginBanner';
+import LoginForm from '../app_component/auth/LoginForm';
 import { COLORS } from '../themes';
 
 const LoginScreen = () => {
     const handleBack = () => {
-        // Xử lý khi nhấn back
-        console.log('Back pressed');
+        router.canGoBack() && router.back();
     };
 
     return (

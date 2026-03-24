@@ -1,10 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-// 1. Import router từ expo-router
-import { router } from 'expo-router';
-import { COLORS, typography } from '../themes';
+import { COLORS, typography } from '../../themes';
+import LoginButton from './LoginButton'; // 1. Import component LoginButton
 import LoginInput from './LoginInput';
 
 const LoginForm = () => {
@@ -12,11 +11,14 @@ const LoginForm = () => {
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
 
-    // 2. Viết một hàm xử lý chuyển trang
     const handleNavigateToRegister = () => {
-        // Tên route này phụ thuộc vào cách bạn đặt tên file trong thư mục 'app'
-        // Ví dụ nếu file là 'app/register.js', thì push('/register')
         router.push('/Register');
+    };
+
+    // Hàm xử lý khi nhấn nút Đăng nhập
+    const handleLogin = () => {
+        console.log("Đăng nhập:", { email, password });
+        router.replace('/tabs/Home'); // Điều hướng đến trang Home sau khi đăng nhập thành công
     };
 
     return (
@@ -50,16 +52,13 @@ const LoginForm = () => {
                 </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.loginButtonContainer}>
-                <LinearGradient
-                    colors={COLORS.GRADIENT_PRIMARY || [COLORS.MAIN, '#4CAF50']}
-                    start={{ x: 0, y: 0.5 }}
-                    end={{ x: 1, y: 0.5 }}
-                    style={styles.loginButton}
-                >
-                    <Text style={[typography.h3Bold, styles.loginText]}>Đăng nhập</Text>
-                </LinearGradient>
-            </TouchableOpacity>
+            {/* 2. Sử dụng component LoginButton ở đây */}
+            <View style={styles.buttonWrapper}>
+                <LoginButton
+                    title="Đăng nhập"
+                    onPress={handleLogin}
+                />
+            </View>
 
             <View style={styles.dividerContainer}>
                 <View style={styles.dividerLine} />
@@ -69,16 +68,15 @@ const LoginForm = () => {
 
             <View style={styles.socialContainer}>
                 <TouchableOpacity style={styles.socialButton}>
-                    <Image source={require('../assets/images/icon_google.png')} style={styles.socialIcon} />
+                    <Image source={require('../../assets/images/icon_google.png')} style={styles.socialIcon} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.socialButton}>
-                    <Image source={require('../assets/images/icon_facebook.png')} style={styles.socialIcon} />
+                    <Image source={require('../../assets/images/icon_facebook.png')} style={styles.socialIcon} />
                 </TouchableOpacity>
             </View>
 
             <View style={styles.footerContainer}>
                 <Text style={styles.textSmall}>Bạn không có tài khoản</Text>
-                {/* 3. Gắn hàm xử lý vào sự kiện onPress */}
                 <TouchableOpacity onPress={handleNavigateToRegister}>
                     <Text style={[typography.link, styles.footerLink]}> Tạo tài khoản</Text>
                 </TouchableOpacity>
@@ -108,9 +106,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: COLORS.BLACK,
     },
-    input: {
-        marginBottom: 15,
-    },
+    // ... (Giữ nguyên các style khác của bạn)
     rememberForgotContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -130,19 +126,9 @@ const styles = StyleSheet.create({
         fontFamily: 'Poppins-Medium',
         fontSize: 12,
     },
-    loginButtonContainer: {
-        borderRadius: 30,
-        overflow: 'hidden',
+    // Style bọc ngoài nút đăng nhập để tạo khoảng cách (thay cho loginButtonContainer cũ)
+    buttonWrapper: {
         marginBottom: 30,
-    },
-    loginButton: {
-        height: 55,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    loginText: {
-        color: COLORS.WHITE,
-        textTransform: 'none',
     },
     dividerContainer: {
         flexDirection: 'row',
@@ -177,7 +163,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-
     textSmall: {
         color: COLORS.BLACK,
         fontFamily: 'Poppins-Regular',
