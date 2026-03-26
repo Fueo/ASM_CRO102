@@ -1,11 +1,22 @@
 import { Feather } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
-import themes from '../../themes'; // Điều chỉnh đường dẫn đến thư mục themes
+
+// Import Redux
+import { useSelector } from 'react-redux';
+
+import themes from '../../themes';
 
 const { colors } = themes;
 
 export default function TabsLayout() {
+    const { isLoggedIn } = useSelector((state) => state.user);
+
+    if (!isLoggedIn) {
+        return <Redirect href="/" />;
+    }
+
+    // 3. Render giao diện nếu đã đăng nhập hợp lệ
     return (
         <Tabs
             screenOptions={{
@@ -30,7 +41,7 @@ export default function TabsLayout() {
         >
             {/* 1. Tab Home */}
             <Tabs.Screen
-                name="Home" // Bắt buộc phải là chữ thường để khớp với file home.tsx
+                name="Home" 
                 options={{
                     tabBarIcon: ({ color, focused }) => (
                         <View style={styles.tabItem}>
@@ -48,7 +59,7 @@ export default function TabsLayout() {
 
             {/* 2. Tab Search */}
             <Tabs.Screen
-                name="Search" // Bắt buộc phải là chữ thường để khớp với file search.tsx
+                name="Search" 
                 options={{
                     tabBarIcon: ({ color, focused }) => (
                         <View style={styles.tabItem}>
@@ -66,7 +77,7 @@ export default function TabsLayout() {
 
             {/* 3. Tab Notification */}
             <Tabs.Screen
-                name="Notification" // Bắt buộc phải là chữ thường
+                name="Notification" 
                 options={{
                     tabBarIcon: ({ color, focused }) => (
                         <View style={styles.tabItem}>
@@ -84,7 +95,7 @@ export default function TabsLayout() {
 
             {/* 4. Tab Profile */}
             <Tabs.Screen
-                name="Profile" // Bắt buộc phải là chữ thường
+                name="Profile"
                 options={{
                     tabBarIcon: ({ color, focused }) => (
                         <View style={styles.tabItem}>

@@ -1,12 +1,12 @@
 import { StyleSheet } from 'react-native'
-import SearchScreen from '../../app_component/search/SearchScreen'
+import ProfileScreen from '../../app_component/profile/ProfileScreen'
 
-const Search = () => {
+const Profile = () => {
     return (
-        <SearchScreen />
+        <ProfileScreen />
     )
 }
 
-export default Search
+export default Profile
 
 const styles = StyleSheet.create({})
