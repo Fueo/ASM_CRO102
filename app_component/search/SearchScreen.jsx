@@ -1,30 +1,73 @@
 import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StatusBar, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { useDispatch } from 'react-redux';
+
+import { fetchProducts } from '../../redux/productSlice';
 import themes from '../../themes';
 import Header from '../home/Header';
-import SearchProductCard from '../SearchProductCard'; // Import thẻ kết quả tìm kiếm
 import RecentSearches from './RecentSearches';
+import SearchProductCard from './SearchProductCard';
 
 const { colors, typography } = themes;
-
-// Data giả lập chuẩn bị cho API sau này
-const DUMMY_RESULTS = [
-    { id: '1', name: 'Panse Đen | Hybrid', price: '250.000đ', stock: 156, image: 'https://images.unsplash.com/photo-1596547609652-9fc5d8d42850?q=80&w=200&auto=format&fit=crop' },
-    { id: '2', name: 'Spider Plant', price: '250.000đ', stock: 20, image: 'https://images.unsplash.com/photo-1485909645996-33924151433f?q=80&w=200&auto=format&fit=crop' },
-];
+const HISTORY_KEY = 'recentSearches';
 
 const SearchScreen = () => {
-    const [searchText, setSearchText] = useState('');
-    const [recentList, setRecentList] = useState(['Spider Plant', 'Song of India']);
-    
-    // State lưu trữ kết quả tìm kiếm (Rỗng = chưa tìm kiếm)
-    const [searchResults, setSearchResults] = useState([]); 
+    const dispatch = useDispatch();
 
-    const handleRemoveRecent = (itemToRemove) => {
-        const newList = recentList.filter(item => item !== itemToRemove);
-        setRecentList(newList);
+    const [searchText, setSearchText] = useState('');
+    const [recentList, setRecentList] = useState([]);
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [hasSearched, setHasSearched] = useState(false); 
+
+    useEffect(() => {
+        const loadHistory = async () => {
+            try {
+                const savedHistory = await AsyncStorage.getItem(HISTORY_KEY);
+                if (savedHistory) {
+                    setRecentList(JSON.parse(savedHistory));
+                }
+            } catch (error) {
+                console.log('Lỗi khi tải lịch sử:', error);
+            }
+        };
+        loadHistory();
+    }, []);
+
+    const saveSearchHistory = async (term) => {
+        try {
+            const filteredList = recentList.filter((item) => item.toLowerCase() !== term.toLowerCase());
+            const newList = [term, ...filteredList].slice(0, 10);
+            
+            setRecentList(newList);
+            await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(newList));
+        } catch (error) {
+            console.log('Lỗi lưu lịch sử:', error);
+        }
+    };
+
+    const handleRemoveRecent = async (itemToRemove) => {
+        try {
+            const newList = recentList.filter((item) => item !== itemToRemove);
+            setRecentList(newList);
+            await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(newList));
+        } catch (error) {
+            console.log('Lỗi xóa lịch sử:', error);
+        }
     };
 
     const handlePressRecent = (item) => {
@@ -32,31 +75,44 @@ const SearchScreen = () => {
         executeSearch(item);
     };
 
-    // Hàm thực thi tìm kiếm (Sau này gọi API ở đây)
-    const executeSearch = (text) => {
-        console.log('Fetching API với từ khóa:', text);
+    const executeSearch = async (text) => {
+        const keyword = text.trim();
+        if (!keyword) return;
+
+        saveSearchHistory(keyword);
+
+        setIsSearching(true);
+        setHasSearched(true); 
         
-        // Cập nhật lịch sử
-        if (!recentList.includes(text)) {
-            setRecentList([text, ...recentList]);
+        try {
+            const response = await dispatch(fetchProducts({ keyword, limit: 20 })).unwrap();
+            
+            const mappedData = (response.data?.products || response.products || []).map(item => ({
+                id: item.id,
+                name: item.name,
+                price: `${Number(item.unitPrice || 0).toLocaleString('vi-VN')}đ`,
+                stock: item.stockQuantity || 0,
+                image: item.imageURL || 'https://via.placeholder.com/300x300?text=No+Image'
+            }));
+
+            setSearchResults(mappedData);
+        } catch (error) {
+            setSearchResults([]); 
+        } finally {
+            setIsSearching(false);
         }
-        
-        // Giả lập set Data từ API
-        setSearchResults(DUMMY_RESULTS);
     };
 
     const handleSearchSubmit = () => {
-        const text = searchText.trim();
-        if (text.length > 0) {
-            executeSearch(text);
-        }
+        executeSearch(searchText);
     };
 
-    // Theo dõi text input, nếu xóa trắng thì quay lại màn hình lịch sử
     const handleChangeText = (text) => {
         setSearchText(text);
-        if (text.length === 0) {
-            setSearchResults([]); // Xóa kết quả để hiện lại lịch sử
+        setHasSearched(false); 
+        
+        if (text.trim().length === 0) {
+            setSearchResults([]); 
         }
     };
 
@@ -74,25 +130,38 @@ const SearchScreen = () => {
                 />
 
                 <View style={styles.bodyContent}>
-                    {/* Ô nhập liệu Tìm kiếm */}
                     <View style={styles.searchBarContainer}>
                         <TextInput
                             style={[typography.subRegular, styles.searchInput]}
                             placeholder="Tìm kiếm"
                             placeholderTextColor={colors.LIGHT}
                             value={searchText}
-                            onChangeText={handleChangeText} // Đã đổi sang hàm mới
+                            onChangeText={handleChangeText}
                             returnKeyType="search"
                             onSubmitEditing={handleSearchSubmit}
+                            autoFocus={true}
                         />
                         <TouchableOpacity style={styles.searchIconBtn} onPress={handleSearchSubmit}>
                             <Feather name="search" size={24} color={colors.BLACK} />
                         </TouchableOpacity>
                     </View>
 
-                    {/* Logic Render: Nếu có kết quả thì hiện List kết quả, chưa có thì hiện Lịch sử */}
-                    {searchResults.length > 0 ? (
+                    {/* Chuỗi Logic Render hoàn chỉnh */}
+                    {isSearching ? (
+                        <View style={styles.centerContainer}>
+                            <ActivityIndicator size="large" color={colors.MAIN} />
+                            <Text style={styles.messageText}>Đang tìm kiếm...</Text>
+                        </View>
+                    ) : hasSearched && searchResults.length === 0 ? (
+                        <View style={styles.centerContainer}>
+                            <Feather name="inbox" size={50} color={colors.LIGHT} />
+                            <Text style={styles.messageText}>Không tìm thấy sản phẩm nào phù hợp.</Text>
+                        </View>
+                    ) : searchResults.length > 0 ? (
                         <ScrollView style={styles.resultsContainer} showsVerticalScrollIndicator={false}>
+                            <Text style={[typography.subMedium, styles.resultCount]}>
+                                Tìm thấy {searchResults.length} kết quả
+                            </Text>
                             {searchResults.map((item) => (
                                 <SearchProductCard 
                                     key={item.id} 
@@ -100,55 +169,57 @@ const SearchScreen = () => {
                                 />
                             ))}
                         </ScrollView>
-                    ) : (
+                    ) : recentList.length > 0 ? (
                         <RecentSearches 
                             data={recentList}
                             onRemove={handleRemoveRecent}
                             onItemPress={handlePressRecent}
                         />
+                    ) : (
+                        /* GIAO DIỆN TRỐNG (EMPTY STATE) KHI CHƯA CÓ GÌ */
+                        <View style={styles.centerContainer}>
+                            <Feather name="search" size={64} color={colors.NEW} />
+                            <Text style={styles.emptyText}>Nhập tên cây cảnh hoặc phụ kiện{'\n'}bạn đang muốn tìm kiếm nhé!</Text>
+                        </View>
                     )}
                 </View>
-
             </KeyboardAvoidingView>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.WHITE,
-    },
-    keyboardView: {
-        flex: 1,
-    },
-    bodyContent: {
-        flex: 1,
-    },
+    container: { flex: 1, backgroundColor: colors.WHITE },
+    keyboardView: { flex: 1 },
+    bodyContent: { flex: 1 },
     searchBarContainer: {
-        flexDirection: 'row',
+        flexDirection: 'row', alignItems: 'center', marginHorizontal: 24,
+        marginTop: 10, borderBottomWidth: 1, borderBottomColor: colors.BLACK, paddingBottom: 5,
+    },
+    searchInput: { flex: 1, color: colors.BLACK, height: 40, paddingRight: 10 },
+    searchIconBtn: { padding: 5 },
+    resultsContainer: { flex: 1, paddingHorizontal: 24, marginTop: 30 },
+    resultCount: { color: colors.GRAY, marginBottom: 15 },
+    
+    // Gom chung style căn giữa cho Loading / Lỗi / Empty State
+    centerContainer: { 
+        flex: 1, 
+        justifyContent: 'center', 
         alignItems: 'center',
-        marginHorizontal: 24,
-        marginTop: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.BLACK,
-        paddingBottom: 5,
+        paddingHorizontal: 40,
     },
-    searchInput: {
-        flex: 1,
-        color: colors.BLACK,
-        height: 40,
-        paddingRight: 10,
+    messageText: { 
+        marginTop: 15, 
+        color: colors.GRAY,
+        textAlign: 'center',
     },
-    searchIconBtn: {
-        padding: 5,
-    },
-    // Style cho vùng chứa danh sách kết quả
-    resultsContainer: {
-        flex: 1,
-        paddingHorizontal: 24,
-        marginTop: 30,
-    },
+    emptyText: {
+        marginTop: 20,
+        color: colors.GRAY,
+        textAlign: 'center',
+        lineHeight: 22,
+        fontFamily: 'Poppins-Regular', // Đảm bảo có font chữ nếu bạn dùng
+    }
 });
 
 export default SearchScreen;

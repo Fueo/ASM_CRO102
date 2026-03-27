@@ -1,6 +1,6 @@
 import { router } from 'expo-router'; // Import router
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import themes from '../themes'; // Sửa lại đường dẫn themes cho đúng (tùy cấu trúc của bạn)
+import themes from '../../themes'; // Sửa lại đường dẫn themes cho đúng (tùy cấu trúc của bạn)
 
 const { colors, typography } = themes;
 
