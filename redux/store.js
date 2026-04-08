@@ -12,12 +12,14 @@ import {
 } from 'redux-persist';
 
 import { injectStore } from '../utils/axiosHelper';
+import cartReducer from './cartSlice';
 import productReducer from './productSlice';
 import userReducer from './userSlice';
 
 const rootReducer = combineReducers({
     user: userReducer,
     product: productReducer,
+    cart: cartReducer
 });
 
 const persistConfig = {

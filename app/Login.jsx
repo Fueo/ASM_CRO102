@@ -20,7 +20,7 @@ const LoginScreen = () => {
                     bounces={false}
                     showsVerticalScrollIndicator={false}
                 >
-                    <HeaderBanner onBackPress={handleBack} />
+                    <HeaderBanner isShowBackButton={false} onBackPress={handleBack} />
                     <LoginForm />
                 </ScrollView>
             </KeyboardAvoidingView>

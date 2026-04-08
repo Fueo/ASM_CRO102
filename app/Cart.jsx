@@ -1,9 +1,18 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
 
-// LƯU Ý: Import các component bạn vừa tạo và kiểm tra lại đường dẫn
+import {
+    clearSelectedCartItems,
+    fetchCart,
+    removeCartItem,
+    toggleCartItemSelection,
+    updateCartItemQuantity,
+    updateCartItemQuantityLocal // Action tĩnh để cập nhật UI ngay lập tức
+} from '../redux/cartSlice';
+
 import CartProductCard from '../app_component/cart/CartProductCard';
 import ConfirmModal from '../app_component/cart/ConfirmModal';
 import Header from '../app_component/home/Header';
@@ -11,78 +20,86 @@ import themes from '../themes';
 
 const { colors, typography } = themes;
 
-const DUMMY_CART = [
-    {
-        id: '1',
-        name: 'Spider Plant',
-        type: 'Ưa bóng',
-        price: 250000,
-        quantity: 2,
-        image: 'https://images.unsplash.com/photo-1596547609652-9fc5d8d42850?q=80&w=200&auto=format&fit=crop'
-    },
-    {
-        id: '2',
-        name: 'Song of India',
-        type: 'Ưa sáng',
-        price: 250000,
-        quantity: 1,
-        image: 'https://images.unsplash.com/photo-1485909645996-33924151433f?q=80&w=200&auto=format&fit=crop'
-    }
-];
-
 const CartScreen = () => {
-    const [cartItems, setCartItems] = useState(DUMMY_CART);
-    const [selectedIds, setSelectedIds] = useState([]);
+    const dispatch = useDispatch();
+
+    // Móc dữ liệu thật từ Redux State
+    const { items, summary, isLoading } = useSelector((state) => state.cart);
     const [isModalVisible, setModalVisible] = useState(false);
 
-    const toggleSelect = (id) => {
-        if (selectedIds.includes(id)) {
-            setSelectedIds(selectedIds.filter(itemId => itemId !== id));
-        } else {
-            setSelectedIds([...selectedIds, id]);
-        }
-    };
+    // Dùng đối tượng để lưu trữ timeout của từng item riêng biệt (Debounce)
+    const debounceTimers = useRef({});
 
-    const updateQuantity = (id, delta) => {
-        setCartItems(prevItems => prevItems.map(item => {
-            if (item.id === id) {
-                const newQuantity = item.quantity + delta;
-                return { ...item, quantity: newQuantity > 0 ? newQuantity : 1 }; 
-            }
-            return item;
+    // Gọi API lấy dữ liệu giỏ hàng khi vừa vào trang
+    useEffect(() => {
+        dispatch(fetchCart());
+
+        // Cleanup function: Clear mọi timeout khi rời khỏi màn hình để tránh rò rỉ bộ nhớ
+        return () => {
+            Object.values(debounceTimers.current).forEach(clearTimeout);
+        };
+    }, [dispatch]);
+
+    // Xử lý chọn / bỏ chọn sản phẩm
+    const handleToggleSelect = (item) => {
+        dispatch(toggleCartItemSelection({
+            cartItemId: item._id,
+            isSelected: !item.isSelected
         }));
     };
 
-    // Xóa 1 sản phẩm (bấm nút Xóa ở item)
-    const removeItem = (id) => {
-        setCartItems(prevItems => prevItems.filter(item => item.id !== id));
-        setSelectedIds(prev => prev.filter(itemId => itemId !== id)); 
+    // Xử lý Tăng / Giảm số lượng với Optimistic Update & Debounce
+    const handleUpdateQuantity = (item, delta) => {
+        const newQuantity = item.quantity + delta;
+
+        // Chặn không cho số lượng tụt xuống <= 0
+        if (newQuantity <= 0) return;
+
+        // Check tồn kho
+        if (item.productId && newQuantity > item.productId.stockQuantity) {
+            Alert.alert("Thông báo", "Số lượng vượt quá tồn kho!");
+            return;
+        }
+
+        // 1. CẬP NHẬT GIAO DIỆN NGAY LẬP TỨC (Chỉ đổi State trên điện thoại)
+        dispatch(updateCartItemQuantityLocal({
+            cartItemId: item._id,
+            quantity: newQuantity
+        }));
+
+        // 2. XOÁ TIMEOUT CŨ (nếu người dùng bấm liên tục chưa tới 1s)
+        if (debounceTimers.current[item._id]) {
+            clearTimeout(debounceTimers.current[item._id]);
+        }
+
+        // 3. SET TIMEOUT MỚI (Đợi 1 giây sau lần bấm cuối cùng mới gọi API)
+        debounceTimers.current[item._id] = setTimeout(() => {
+            dispatch(updateCartItemQuantity({
+                cartItemId: item._id,
+                quantity: newQuantity
+            }))
+                .unwrap()
+                .catch(() => {
+                    // Rollback giao diện nếu API gọi ngầm bị lỗi
+                    Alert.alert("Lỗi", "Không thể cập nhật số lượng trên máy chủ");
+                    dispatch(fetchCart()); // Tải lại giỏ hàng cho chắc ăn
+                });
+        }, 1000);
     };
 
-    // Xóa TẤT CẢ giỏ hàng
-    const clearAllCart = () => {
-        setCartItems([]);
-        setSelectedIds([]);
+    // Xử lý xóa 1 sản phẩm
+    const handleRemoveItem = (id) => {
+        dispatch(removeCartItem(id));
+    };
+
+    // Xử lý xóa các sản phẩm đang được chọn
+    const handleRemoveSelectedItems = () => {
+        dispatch(clearSelectedCartItems());
         setModalVisible(false);
     };
 
-    // Xóa CHỈ NHỮNG SẢN PHẨM ĐƯỢC CHỌN
-    const removeSelectedItems = () => {
-        setCartItems(prevItems => prevItems.filter(item => !selectedIds.includes(item.id)));
-        setSelectedIds([]); // Làm trống danh sách đã chọn
-        setModalVisible(false);
-    };
-
-    const calculateTotal = () => {
-        return cartItems
-            .filter(item => selectedIds.includes(item.id))
-            .reduce((total, item) => total + (item.price * item.quantity), 0);
-    };
-
-    const totalPrice = calculateTotal();
-
-    // Biến cờ kiểm tra xem có đang chọn sản phẩm nào không
-    const hasSelectedItems = selectedIds.length > 0;
+    // Kiểm tra có đang chọn item nào để xóa không (dựa vào `summary` của Redux)
+    const hasSelectedItems = summary.totalSelectedItems > 0;
 
     return (
         <View style={styles.container}>
@@ -93,25 +110,34 @@ const CartScreen = () => {
                 onBackPress={() => router.back()}
                 rightIcon="trash-2"
                 onRightPress={() => {
-                    // Chỉ bật modal nếu giỏ hàng có đồ
-                    if (cartItems.length > 0) setModalVisible(true);
+                    if (items.length === 0) return;
+
+                    if (hasSelectedItems) {
+                        setModalVisible(true);
+                    } else {
+                        Alert.alert("Lưu ý", "Vui lòng chọn sản phẩm cần xoá.");
+                    }
                 }}
             />
 
-            {cartItems.length > 0 ? (
+            {isLoading ? (
+                <View style={styles.emptyContainer}>
+                    <ActivityIndicator size="large" color={colors.MAIN} />
+                </View>
+            ) : items.length > 0 ? (
                 <FlatList
-                    data={cartItems}
-                    keyExtractor={(item) => item.id}
+                    data={items}
+                    keyExtractor={(item) => item._id}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                     renderItem={({ item }) => (
                         <CartProductCard
                             item={item}
-                            isSelected={selectedIds.includes(item.id)}
-                            onToggleSelect={() => toggleSelect(item.id)}
-                            onIncrease={() => updateQuantity(item.id, 1)}
-                            onDecrease={() => updateQuantity(item.id, -1)}
-                            onRemove={() => removeItem(item.id)}
+                            isSelected={item.isSelected}
+                            onToggleSelect={() => handleToggleSelect(item)}
+                            onIncrease={() => handleUpdateQuantity(item, 1)}
+                            onDecrease={() => handleUpdateQuantity(item, -1)}
+                            onRemove={() => handleRemoveItem(item._id)}
                         />
                     )}
                 />
@@ -121,12 +147,13 @@ const CartScreen = () => {
                 </View>
             )}
 
+            {/* Chỉ hiển thị Checkout Bar khi có sản phẩm được chọn */}
             {hasSelectedItems && (
                 <View style={styles.bottomCheckout}>
                     <View style={styles.totalRow}>
                         <Text style={styles.totalLabel}>Tạm tính</Text>
                         <Text style={[typography.subBold, styles.totalPrice]}>
-                            {totalPrice.toLocaleString('vi-VN')}đ
+                            {(summary.totalCartAmount || 0).toLocaleString('vi-VN')}đ
                         </Text>
                     </View>
                     <TouchableOpacity style={styles.checkoutBtn} activeOpacity={0.8}>
@@ -136,14 +163,11 @@ const CartScreen = () => {
                 </View>
             )}
 
-            {/* Gọi ConfirmModal với Title và Hàm Confirm linh hoạt */}
-            <ConfirmModal 
+            <ConfirmModal
                 visible={isModalVisible}
                 onClose={() => setModalVisible(false)}
-                // Đổi hàm thực thi tùy theo việc có đang tick chọn sp hay không
-                onConfirm={hasSelectedItems ? removeSelectedItems : clearAllCart}
-                // Đổi câu chữ cho phù hợp với 2 trường hợp
-                title={hasSelectedItems ? "Xác nhận xoá sản phẩm đã chọn?" : "Xác nhận xoá tất cả đơn hàng?"}
+                onConfirm={handleRemoveSelectedItems}
+                title="Xác nhận xoá sản phẩm đã chọn?"
                 description="Thao tác này sẽ không thể khôi phục."
             />
         </View>
@@ -151,64 +175,16 @@ const CartScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.WHITE,
-    },
-    listContent: {
-        paddingHorizontal: 24,
-        paddingTop: 20,
-        paddingBottom: 100, 
-    },
-    emptyContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    emptyText: {
-        color: colors.GRAY,
-        fontSize: 16,
-    },
-    bottomCheckout: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: colors.WHITE,
-        paddingHorizontal: 24,
-        paddingTop: 15,
-        paddingBottom: 25,
-        borderTopWidth: 1,
-        borderColor: colors.NEW,
-    },
-    totalRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 15,
-    },
-    totalLabel: {
-        color: colors.GRAY,
-        fontSize: 14,
-    },
-    totalPrice: {
-        color: colors.BLACK,
-        fontSize: 18,
-    },
-    checkoutBtn: {
-        backgroundColor: colors.MAIN,
-        flexDirection: 'row',
-        height: 50,
-        borderRadius: 8,
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-    },
-    checkoutBtnText: {
-        color: colors.WHITE,
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
+    container: { flex: 1, backgroundColor: colors.WHITE },
+    listContent: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 100 },
+    emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    emptyText: { color: colors.GRAY, fontSize: 16 },
+    bottomCheckout: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: colors.WHITE, paddingHorizontal: 24, paddingTop: 15, paddingBottom: 25, borderTopWidth: 1, borderColor: colors.NEW },
+    totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+    totalLabel: { color: colors.GRAY, fontSize: 14 },
+    totalPrice: { color: colors.BLACK, fontSize: 18 },
+    checkoutBtn: { backgroundColor: colors.MAIN, flexDirection: 'row', height: 50, borderRadius: 8, justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20 },
+    checkoutBtnText: { color: colors.WHITE, fontSize: 16, fontWeight: 'bold' },
 });
 
 export default CartScreen;

@@ -4,16 +4,18 @@ import { COLORS } from '../../themes';
 
 const { width } = Dimensions.get('window');
 
-const HeaderBanner = ({ onBackPress, heightRatio = 0.8 }) => (
+const HeaderBanner = ({ isShowBackButton = true, onBackPress, heightRatio = 0.8 }) => (
     <View style={[styles.outerContainer, { height: width * heightRatio }]}>
+
+        {isShowBackButton && <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
+            <Ionicons name="arrow-back" size={24} color={COLORS.WHITE} />
+        </TouchableOpacity>}
+
         <Image
             source={require('../../assets/images/bg_login.png')}
             style={styles.backgroundImage}
         />
 
-        <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.WHITE} />
-        </TouchableOpacity>
     </View>
 );
 

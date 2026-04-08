@@ -3,6 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
+    Alert, // Import Alert để thông báo
     Dimensions,
     Image,
     Platform,
@@ -14,6 +15,7 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 
+import { addToCart } from '../redux/cartSlice'; // IMPORT ACTION ADDTOCART
 import { fetchProductById } from '../redux/productSlice';
 import themes from '../themes';
 import Header from './home/Header';
@@ -26,6 +28,8 @@ const ProductDetail = () => {
     const dispatch = useDispatch();
 
     const { productDetail, detailLoading, detailError } = useSelector((state) => state.product);
+    // Lấy thêm actionLoading để vô hiệu hóa nút bấm lúc API đang chạy
+    const { actionLoading } = useSelector((state) => state.cart);
 
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const [quantity, setQuantity] = useState(0);
@@ -46,6 +50,25 @@ const ProductDetail = () => {
     const increaseQuantity = () => setQuantity(prev => prev + 1);
     const decreaseQuantity = () => { if (quantity > 0) setQuantity(prev => prev - 1); };
 
+    // HÀM XỬ LÝ THÊM VÀO GIỎ HÀNG
+    const handleAddToCart = async () => {
+        if (quantity === 0) return;
+
+        try {
+            // Backend của bạn dùng _id hoặc id tùy lúc query, ta lấy fallback cho an toàn
+            const productId = productDetail._id || productDetail.id;
+
+            await dispatch(addToCart({ productId, quantity })).unwrap();
+
+            Alert.alert("Thành công", "Sản phẩm đã được thêm vào giỏ hàng!", [
+                { text: "Tiếp tục mua", onPress: () => setQuantity(0) }, // Reset số lượng
+                { text: "Đến giỏ hàng", onPress: () => router.push('/Cart') }
+            ]);
+        } catch (error) {
+            Alert.alert("Lỗi", error || "Không thể thêm vào giỏ hàng");
+        }
+    };
+
     if (detailLoading) {
         return (
             <View style={styles.loadingCenter}>
@@ -60,7 +83,7 @@ const ProductDetail = () => {
                 <Feather name="alert-circle" size={50} color={colors.GRAY} />
                 <Text style={styles.errorText}>{detailError || "Không tìm thấy sản phẩm"}</Text>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backLink}>
-                    <Text style={{color: colors.MAIN}}>Quay lại</Text>
+                    <Text style={{ color: colors.MAIN }}>Quay lại</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -68,7 +91,7 @@ const ProductDetail = () => {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="dark"  />
+            <StatusBar barStyle="dark-content" backgroundColor={colors.WHITE} />
 
             <Header
                 title={productDetail?.name || "Chi tiết"}
@@ -77,26 +100,23 @@ const ProductDetail = () => {
                 onRightPress={() => router.push('/Cart')}
             />
 
-            {/* PHẦN NỘI DUNG CHÍNH - KHÔNG DÙNG SCROLLVIEW */}
             <View style={styles.mainContent}>
-                
-                {/* 2. Image Slider (Chiếm khoảng 35-40% chiều cao màn hình) */}
+                {/* 2. Image Slider */}
                 <View style={styles.sliderContainer}>
-                    <Image 
-                        source={{ uri: productDetail.images?.[activeImageIndex]?.url || 'https://via.placeholder.com/300x300?text=No+Image' }} 
-                        style={styles.productImage} 
+                    <Image
+                        source={{ uri: productDetail.images?.[activeImageIndex]?.url || 'https://via.placeholder.com/300x300?text=No+Image' }}
+                        style={styles.productImage}
                         resizeMode="contain"
                     />
-                    
-                    {/* Nút Arrow điều hướng trái phải */}
+
                     <View style={styles.arrowContainer}>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             onPress={() => activeImageIndex > 0 && setActiveImageIndex(activeImageIndex - 1)}
                             style={[styles.arrowBtn, { opacity: activeImageIndex === 0 ? 0.3 : 1 }]}
                         >
                             <Feather name="chevron-left" size={20} color={colors.BLACK} />
                         </TouchableOpacity>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             onPress={() => activeImageIndex < (productDetail.images?.length - 1) && setActiveImageIndex(activeImageIndex + 1)}
                             style={[styles.arrowBtn, { opacity: activeImageIndex === (productDetail.images?.length - 1) ? 0.3 : 1 }]}
                         >
@@ -104,7 +124,6 @@ const ProductDetail = () => {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Pagination Dots */}
                     <View style={styles.pagination}>
                         {productDetail.images?.map((_, index) => (
                             <View key={index} style={[styles.dot, activeImageIndex === index ? styles.activeDot : null]} />
@@ -112,7 +131,7 @@ const ProductDetail = () => {
                     </View>
                 </View>
 
-                {/* 3. Product Info (Tự động lấp đầy khoảng trống còn lại) */}
+                {/* 3. Product Info */}
                 <View style={styles.infoContainer}>
                     <View style={styles.tagsRow}>
                         {productDetail.categories?.map((cate, index) => (
@@ -151,7 +170,7 @@ const ProductDetail = () => {
                 </View>
             </View>
 
-            {/* 4. Bottom Bar (Cố định ở đáy) */}
+            {/* 4. Bottom Bar */}
             <View style={styles.bottomBar}>
                 <View style={styles.priceCalcRow}>
                     <View>
@@ -174,12 +193,16 @@ const ProductDetail = () => {
                     </View>
                 </View>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={[styles.buyButton, quantity > 0 ? styles.buyButtonActive : styles.buyButtonInactive]}
-                    disabled={quantity === 0}
-                    onPress={() => console.log("Add to cart", productDetail.id, quantity)}
+                    disabled={quantity === 0 || actionLoading}
+                    onPress={handleAddToCart}
                 >
-                    <Text style={styles.buyButtonText}>CHỌN MUA</Text>
+                    {actionLoading ? (
+                        <ActivityIndicator color={colors.WHITE} />
+                    ) : (
+                        <Text style={styles.buyButtonText}>CHỌN MUA</Text>
+                    )}
                 </TouchableOpacity>
             </View>
         </View>
@@ -188,10 +211,8 @@ const ProductDetail = () => {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.WHITE },
-    mainContent: { flex: 1 }, // Chiếm trọn không gian giữa Header và BottomBar
+    mainContent: { flex: 1 },
     loadingCenter: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.WHITE },
-    
-    // --- Slider Styles (Thu gọn chiều cao) ---
     sliderContainer: { height: screenHeight * 0.35, backgroundColor: colors.NEW, position: 'relative', justifyContent: 'center' },
     productImage: { width: '100%', height: '80%' },
     arrowContainer: { position: 'absolute', width: '100%', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 15 },
@@ -199,8 +220,6 @@ const styles = StyleSheet.create({
     pagination: { position: 'absolute', bottom: 10, width: '100%', flexDirection: 'row', justifyContent: 'center' },
     dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.LIGHT, marginHorizontal: 3 },
     activeDot: { backgroundColor: colors.BLACK, width: 12 },
-
-    // --- Info Styles (Tối ưu khoảng cách) ---
     infoContainer: { flex: 1, paddingHorizontal: 24, paddingTop: 15 },
     tagsRow: { flexDirection: 'row', marginBottom: 8, flexWrap: 'wrap' },
     tagBadge: { backgroundColor: colors.MAIN, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 4, marginRight: 8, marginBottom: 4 },
@@ -213,13 +232,7 @@ const styles = StyleSheet.create({
     detailValue: { color: colors.BLACK, fontSize: 14 },
     stockValue: { color: colors.MAIN, fontSize: 14 },
     detailDivider: { height: 1, backgroundColor: '#EEEEEE' },
-
-    // --- Bottom Bar ---
-    bottomBar: { 
-        paddingHorizontal: 24, paddingTop: 12, 
-        paddingBottom: Platform.OS === 'ios' ? 30 : 15, 
-        backgroundColor: colors.WHITE, borderTopWidth: 1, borderTopColor: '#F5F5F5' 
-    },
+    bottomBar: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: Platform.OS === 'ios' ? 30 : 15, backgroundColor: colors.WHITE, borderTopWidth: 1, borderTopColor: '#F5F5F5' },
     priceCalcRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     calcLabel: { color: colors.GRAY, fontSize: 12, marginBottom: 4 },
     quantityControl: { flexDirection: 'row', alignItems: 'center' },

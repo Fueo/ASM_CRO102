@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const axiosClient = axios.create({
     baseURL: API_BASE_URL,
@@ -49,7 +49,7 @@ axiosClient.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
         const isUnauthorized = error.response?.status === 401;
-        const isRefreshApi = originalRequest?.url?.includes('/users/refresh-token');
+        const isRefreshApi = originalRequest?.url?.includes('/users/refresh');
 
         if (!isUnauthorized || originalRequest?._retry || isRefreshApi) {
             return Promise.reject(error);
@@ -76,7 +76,7 @@ axiosClient.interceptors.response.use(
             }
 
             const refreshResponse = await axios.post(
-                `${API_BASE_URL}/users/refresh-token`,
+                `${API_BASE_URL}/users/refresh`,
                 { refreshToken },
                 {
                     headers: {
