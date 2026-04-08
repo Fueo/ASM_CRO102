@@ -156,7 +156,13 @@ const CartScreen = () => {
                             {(summary.totalCartAmount || 0).toLocaleString('vi-VN')}đ
                         </Text>
                     </View>
-                    <TouchableOpacity style={styles.checkoutBtn} activeOpacity={0.8}>
+                    
+                    {/* BỔ SUNG sự kiện onPress VÀO ĐÂY */}
+                    <TouchableOpacity 
+                        style={styles.checkoutBtn} 
+                        activeOpacity={0.8}
+                        onPress={() => router.push('/Order')} // Điều hướng sang OrderScreen
+                    >
                         <Text style={styles.checkoutBtnText}>Tiến hành thanh toán</Text>
                         <Feather name="chevron-right" size={20} color={colors.WHITE} />
                     </TouchableOpacity>

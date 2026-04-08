@@ -1,12 +1,13 @@
+import { router } from 'expo-router'; // 1. Thêm dòng này để dùng điều hướng
 import {
-    Alert,
-    Image,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 import { useDispatch, useSelector } from 'react-redux';
@@ -85,7 +86,11 @@ const ProfileScreen = () => {
           <Text style={[typography.bodyRegular, styles.sectionTitle]}>Chung</Text>
           <View style={styles.divider} />
 
-          <MenuItem title="Chỉnh sửa thông tin" onPress={() => console.log('Sửa thông tin')} />
+          {/* 2. Cập nhật sự kiện onPress để chuyển trang */}
+          <MenuItem 
+            title="Chỉnh sửa thông tin" 
+            onPress={() => router.push('/EditInfo')} 
+          />
           <MenuItem title="Cẩm nang trồng cây" onPress={() => console.log('Cẩm nang')} />
           <MenuItem title="Lịch sử giao dịch" onPress={() => console.log('Lịch sử')} />
           <MenuItem title="Q & A" onPress={() => console.log('QnA')} />

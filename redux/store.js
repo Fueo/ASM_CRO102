@@ -13,13 +13,15 @@ import {
 
 import { injectStore } from '../utils/axiosHelper';
 import cartReducer from './cartSlice';
+import orderReducer from './orderSlice';
 import productReducer from './productSlice';
 import userReducer from './userSlice';
 
 const rootReducer = combineReducers({
     user: userReducer,
     product: productReducer,
-    cart: cartReducer
+    cart: cartReducer,
+    order: orderReducer
 });
 
 const persistConfig = {

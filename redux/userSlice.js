@@ -60,14 +60,12 @@ export const logoutUserAsync = createAsyncThunk(
         const authProvider = state?.user?.currentUser?.authProvider;
 
         try {
-            // 1. Logout backend
             try {
                 await axiosClient.post('/users/logout');
             } catch (error) {
                 console.log('Logout backend error:', error?.response?.data || error?.message);
             }
 
-            // 2. Nếu là Google thì logout luôn phiên Google trên máy
             if (authProvider === 'google') {
                 try {
                     const hasPrev = await GoogleSignin.hasPreviousSignIn();
@@ -80,13 +78,31 @@ export const logoutUserAsync = createAsyncThunk(
                 }
             }
 
-            // 3. Xóa token local
             await AsyncStorage.removeItem('accessToken');
             await AsyncStorage.removeItem('refreshToken');
 
             return true;
         } catch (error) {
             return rejectWithValue(error?.message || 'Đăng xuất thất bại');
+        }
+    }
+);
+
+// ==============================================================
+// THÊM THUNK: CẬP NHẬT THÔNG TIN NGƯỜI DÙNG
+// ==============================================================
+export const updateUserProfile = createAsyncThunk(
+    'user/updateUserProfile',
+    async (userData, { rejectWithValue }) => {
+        try {
+            // Gửi request PUT tới endpoint /users/me
+            const response = await axiosClient.put('/users/me', userData);
+            // Trả về dữ liệu user mới nhất từ backend
+            return response.data.data;
+        } catch (error) {
+            return rejectWithValue(
+                error.response?.data?.message || error.message || 'Cập nhật thông tin thất bại'
+            );
         }
     }
 );
@@ -126,6 +142,7 @@ const userSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
+            // --- LOGIN LOCAL ---
             .addCase(loginUser.pending, (state) => {
                 state.isLoading = true;
             })
@@ -140,6 +157,7 @@ const userSlice = createSlice({
                 state.isLoading = false;
             })
 
+            // --- LOGIN GOOGLE ---
             .addCase(loginWithGoogle.pending, (state) => {
                 state.isLoading = true;
             })
@@ -154,6 +172,7 @@ const userSlice = createSlice({
                 state.isLoading = false;
             })
 
+            // --- LOGOUT ---
             .addCase(logoutUserAsync.pending, (state) => {
                 state.isLoading = true;
             })
@@ -170,6 +189,21 @@ const userSlice = createSlice({
                 state.isLoggedIn = false;
                 state.accessToken = null;
                 state.refreshToken = null;
+            })
+
+            // ==============================================================
+            // --- UPDATE PROFILE ---
+            // ==============================================================
+            .addCase(updateUserProfile.pending, (state) => {
+                state.isLoading = true;
+            })
+            .addCase(updateUserProfile.fulfilled, (state, action) => {
+                state.isLoading = false;
+                // Cập nhật lại state currentUser với dữ liệu mới trả về từ API
+                state.currentUser = action.payload;
+            })
+            .addCase(updateUserProfile.rejected, (state) => {
+                state.isLoading = false;
             });
     },
 });
