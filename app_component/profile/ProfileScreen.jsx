@@ -1,4 +1,4 @@
-import { router } from 'expo-router'; // 1. Thêm dòng này để dùng điều hướng
+import { router } from 'expo-router'; // 1. Đảm bảo đã import router
 import {
   Alert,
   Image,
@@ -86,14 +86,18 @@ const ProfileScreen = () => {
           <Text style={[typography.bodyRegular, styles.sectionTitle]}>Chung</Text>
           <View style={styles.divider} />
 
-          {/* 2. Cập nhật sự kiện onPress để chuyển trang */}
-          <MenuItem 
-            title="Chỉnh sửa thông tin" 
-            onPress={() => router.push('/EditInfo')} 
+          <MenuItem
+            title="Chỉnh sửa thông tin"
+            onPress={() => router.push('/EditInfo')}
           />
           <MenuItem title="Cẩm nang trồng cây" onPress={() => console.log('Cẩm nang')} />
           <MenuItem title="Lịch sử giao dịch" onPress={() => console.log('Lịch sử')} />
-          <MenuItem title="Q & A" onPress={() => console.log('QnA')} />
+
+          {/* CẬP NHẬT ROUTER CHO Q&A Ở ĐÂY */}
+          <MenuItem
+            title="Q & A"
+            onPress={() => router.push('/QA')}
+          />
         </View>
 
         <View style={styles.sectionContainer}>
